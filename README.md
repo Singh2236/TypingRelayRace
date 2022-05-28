@@ -10,3 +10,6 @@ Yet to add:
       -> Making team of two and playing against eachother.
   The Relay Race algorithm.
   Player score Data Store.
+  
+  
+  Uploading Whole Maven Project after finishing. 

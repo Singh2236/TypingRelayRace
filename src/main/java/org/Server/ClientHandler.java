@@ -11,6 +11,7 @@ import java.net.SocketException;
 
 public class ClientHandler implements Runnable {
     Socket connection;
+    static PlayersList playersList;
 
     public ClientHandler(Socket socket) {
         this.connection = socket;
@@ -19,10 +20,6 @@ public class ClientHandler implements Runnable {
 
     public void run() {
         try {
-
-
-
-
 
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             PrintWriter out = new PrintWriter(connection.getOutputStream(), true);
@@ -42,8 +39,29 @@ public class ClientHandler implements Runnable {
                     String clientPass = clientDataArray[1];
 
                     UserData userData = UserData.getInstance();
+
                     if (userData.isLogInCorrect(clientName, clientPass)) {
                         out.println(true);  //C
+
+                        
+                        playersList = PlayersList.getInstance();
+                        playersList.addPlayers(Thread.currentThread());
+
+                        for (Thread t:playersList.playersListArray) {
+                            System.out.println(t);
+                        }
+                        System.out.println(playersList.getNoOfPlayersLoggedIn());
+                        if (playersList.isTeamBuild()) {
+                            System.out.println("The two players are"+ playersList.toString());
+                            System.out.println("Removing first two players from the main stack");
+                            System.out.println("List Empty: " + playersList.emptyList());
+                        }
+
+
+
+
+
+
                     }
                     else {
                         out.println("Credentials are not correct please try Again");

@@ -1,5 +1,6 @@
 package org.Server;
 
+import org.TheGame.TypingRaceAlgo;
 import org.User.UserData;
 
 import java.io.BufferedReader;
@@ -8,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
+import java.sql.Time;
 
 public class ClientHandler implements Runnable {
     Socket connection;
@@ -27,39 +29,49 @@ public class ClientHandler implements Runnable {
             while (true) {
 
                 String msgFromClient = in.readLine(); // Place A
-                System.out.println(msgFromClient);
+
                 if (msgFromClient.equals("1")) {
+                    System.out.println(Thread.currentThread().getName() + " Chosen to Login.");
                     //run authentication method to check if the details given by user is correct
                     //return of this authentication function should be boolean
                     //write boolean to the client
                     String clientCredentials = in.readLine();  //B
-                    System.out.println(clientCredentials);
                     String[] clientDataArray = clientCredentials.split(",");
                     String clientName = clientDataArray[0];
                     String clientPass = clientDataArray[1];
+                    System.out.println(Thread.currentThread().getName() + " Credentials : " + clientName + " " + clientPass);
 
                     UserData userData = UserData.getInstance();
 
                     if (userData.isLogInCorrect(clientName, clientPass)) {
                         out.println(true);  //C
+                        System.out.println(Thread.currentThread().getName() + "Logged In");
 
-                        
-                        playersList = PlayersList.getInstance();
-                        playersList.addPlayers(Thread.currentThread());
+                        if (in.readLine().equals("play")) {     //place H
+                            playersList = PlayersList.getInstance();
+                            playersList.addPlayers(Thread.currentThread());
 
-                        for (Thread t:playersList.playersListArray) {
-                            System.out.println(t);
-                        }
-                        System.out.println(playersList.getNoOfPlayersLoggedIn());
-                        if (playersList.isTeamBuild()) {
-                            System.out.println("The two players are"+ playersList.toString());
-                            System.out.println("Removing first two players from the main stack");
-                            System.out.println("List Empty: " + playersList.emptyList());
+                            ///
+                            out.println("wait");                // place G
+                            System.out.println("Waiting for team to build...");
+                            //maybe current thread to wait until we have two players
+                            // in the array list
                         }
 
-
-
-
+                        //crucial point
+                        while (true) {
+                            System.out.println("Checking team build");
+                            if (playersList.isTeamBuild()) {
+                                out.println("Team");            //Invokes ClientSideGame
+                                TypingRaceAlgo game = new TypingRaceAlgo();
+                                game.run();
+                            }
+                            try {
+                                Thread.currentThread().sleep(5000);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
 
 
                     }
@@ -70,6 +82,7 @@ public class ClientHandler implements Runnable {
 
                 }
                 else if (msgFromClient.equals("2")) {
+                    System.out.println("Client Chosen to Register.");
                     //read from the client
                     //run the signUp method to add the details of the user to the database
                     //write success to the client and return him to main menu at the client side
@@ -79,11 +92,13 @@ public class ClientHandler implements Runnable {
                     String[] clientDataArray = clientCredentials.split(",");
                     String clientName = clientDataArray[0];
                     String clientPass = clientDataArray[1];
+                    System.out.println(Thread.currentThread().getName() + " Credentials : " + clientName + " " + clientPass);
 
                     //storing data in userDataMap
                     UserData userData = UserData.getInstance();
                     if (userData.isUsernameTaken(clientName)) {
                         out.println("User Name taken");               //E
+                        System.out.println("User Name Taken");
                     }
                     else {
                         userData.registerUser(clientName, clientPass);
@@ -106,5 +121,6 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 }

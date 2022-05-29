@@ -42,6 +42,9 @@ public class Client {
                         System.out.println("Successfully Logged ");
 
                         //if the player is logged in then send him to lobby to wait there for grouping
+                        ClientLobby cl = new ClientLobby();
+                        cl.run(connection);
+
                     }else {
                         System.out.println(check);
                     }

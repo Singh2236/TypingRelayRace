@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
-import java.sql.Time;
 
 public class ClientHandler implements Runnable {
     Socket connection;
@@ -26,89 +25,99 @@ public class ClientHandler implements Runnable {
             BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             PrintWriter out = new PrintWriter(connection.getOutputStream(), true);
 
+            label:
             while (true) {
 
                 String msgFromClient = in.readLine(); // Place A
 
-                if (msgFromClient.equals("1")) {
-                    System.out.println(Thread.currentThread().getName() + " Chosen to Login.");
-                    //run authentication method to check if the details given by user is correct
-                    //return of this authentication function should be boolean
-                    //write boolean to the client
-                    String clientCredentials = in.readLine();  //B
-                    String[] clientDataArray = clientCredentials.split(",");
-                    String clientName = clientDataArray[0];
-                    String clientPass = clientDataArray[1];
-                    System.out.println(Thread.currentThread().getName() + " Credentials : " + clientName + " " + clientPass);
+                switch (msgFromClient) {
+                    case "1": {
+                        System.out.println(Thread.currentThread().getName() + " Chosen to Login.");
+                        //run authentication method to check if the details given by user is correct
+                        //return of this authentication function should be boolean
+                        //write boolean to the client
+                        String clientCredentials = in.readLine();  //B
 
-                    UserData userData = UserData.getInstance();
+                        String[] clientDataArray = clientCredentials.split(",");
+                        String clientName = clientDataArray[0];
+                        String clientPass = clientDataArray[1];
+                        System.out.println(Thread.currentThread().getName() + " Credentials : " + clientName + " " + clientPass);
 
-                    if (userData.isLogInCorrect(clientName, clientPass)) {
-                        out.println(true);  //C
-                        System.out.println(Thread.currentThread().getName() + "Logged In");
+                        UserData userData = UserData.getInstance();
 
-                        if (in.readLine().equals("play")) {     //place H
-                            playersList = PlayersList.getInstance();
-                            playersList.addPlayers(Thread.currentThread());
+                        if (userData.isLogInCorrect(clientName, clientPass)) {
+                            out.println(true);  //C
 
-                            ///
-                            out.println("wait");                // place G
-                            System.out.println("Waiting for team to build...");
-                            //maybe current thread to wait until we have two players
-                            // in the array list
+                            System.out.println(Thread.currentThread().getName() + "Logged In");
+
+                            if (in.readLine().equals("play")) {     //place H
+                                playersList = PlayersList.getInstance();
+                                playersList.addPlayers(Thread.currentThread());
+
+                                ///
+                                out.println("wait");                // place G
+
+                                System.out.println("Waiting for team to build...");
+                                //maybe current thread to wait until we have two players
+                                // in the array list
+                            }
+
+                            //crucial point has to be modified
+                            while (true) {
+                                System.out.println("Checking team build");
+                                if (playersList.isTeamBuild()) {
+                                    out.println("Team");            //Invokes ClientSideGame
+                                    TypingRaceAlgo game = new TypingRaceAlgo();
+                                    game.run();
+                                }
+                                try {
+                                    Thread.sleep(5000);  //need to change this code
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+
+
+                        }
+                        else {
+                            out.println("Credentials are not correct please try Again");
                         }
 
-                        //crucial point
-                        while (true) {
-                            System.out.println("Checking team build");
-                            if (playersList.isTeamBuild()) {
-                                out.println("Team");            //Invokes ClientSideGame
-                                TypingRaceAlgo game = new TypingRaceAlgo();
-                                game.run();
-                            }
-                            try {
-                                Thread.currentThread().sleep(5000);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
+
+                        break;
+                    }
+                    case "2": {
+                        System.out.println("Client Chosen to Register.");
+                        //read from the client
+                        //run the signUp method to add the details of the user to the database
+                        //write success to the client and return him to main menu at the client side
+                        //singleton class for data registration
+
+                        String clientCredentials = in.readLine();       //D
+
+                        String[] clientDataArray = clientCredentials.split(",");
+                        String clientName = clientDataArray[0];
+                        String clientPass = clientDataArray[1];
+                        System.out.println(Thread.currentThread().getName() + " Credentials : " + clientName + " " + clientPass);
+
+                        //storing data in userDataMap
+                        UserData userData = UserData.getInstance();
+                        if (userData.isUsernameTaken(clientName)) {
+                            out.println("User Name taken");               //E
+
+                            System.out.println("User Name Taken");
+                        }
+                        else {
+                            userData.registerUser(clientName, clientPass);
+                            out.println("User Registered(" + clientName + ")"); //E
+
+
                         }
 
-
+                        break;
                     }
-                    else {
-                        out.println("Credentials are not correct please try Again");
-                    }
-
-
-                }
-                else if (msgFromClient.equals("2")) {
-                    System.out.println("Client Chosen to Register.");
-                    //read from the client
-                    //run the signUp method to add the details of the user to the database
-                    //write success to the client and return him to main menu at the client side
-                    //singleton class for data registration
-
-                    String clientCredentials = in.readLine();       //D
-                    String[] clientDataArray = clientCredentials.split(",");
-                    String clientName = clientDataArray[0];
-                    String clientPass = clientDataArray[1];
-                    System.out.println(Thread.currentThread().getName() + " Credentials : " + clientName + " " + clientPass);
-
-                    //storing data in userDataMap
-                    UserData userData = UserData.getInstance();
-                    if (userData.isUsernameTaken(clientName)) {
-                        out.println("User Name taken");               //E
-                        System.out.println("User Name Taken");
-                    }
-                    else {
-                        userData.registerUser(clientName, clientPass);
-                        out.println("User Registered(" + clientName + ")"); //E
-
-                    }
-
-                }
-                else if (msgFromClient.equals("3")) {
-                    break;
+                    case "3":
+                        break label;
                 }
             }
             in.close();

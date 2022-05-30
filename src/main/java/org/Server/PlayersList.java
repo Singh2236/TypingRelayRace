@@ -40,6 +40,9 @@ public class PlayersList {
     public boolean emptyList() {
         return playersListArray.removeAll(playersListArray);
     }
+    public int getSize(){
+        return playersListArray.size();
+    }
 
     @Override
     public String toString() {

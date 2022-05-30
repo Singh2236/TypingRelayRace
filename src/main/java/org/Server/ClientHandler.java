@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.net.SocketException;
 
 public class ClientHandler implements Runnable {
+    Object foo = new Object();
     Socket connection;
     static PlayersList playersList;
 
@@ -54,28 +55,33 @@ public class ClientHandler implements Runnable {
                                 playersList = PlayersList.getInstance();
                                 playersList.addPlayers(Thread.currentThread());
 
+                                //producer thread
+                                synchronized (foo) {
+                                    if (playersList.getSize() == 2) {
+                                        foo.notify();
+                                    }
+                                }
+
                                 ///
                                 out.println("wait");                // place G
 
                                 System.out.println("Waiting for team to build...");
-                                //maybe current thread to wait until we have two players
-                                // in the array list
+                            }
+                            //Consumer thread
+                            try {
+                                synchronized (foo) {
+                                    while (!playersList.isTeamBuild()) {
+                                        foo.wait();
+                                    }
+                                    TypingRaceAlgo tra = new TypingRaceAlgo();
+                                    tra.run();
+                                }
+                            } catch (InterruptedException e) {
+                                System.out.println("InterruptedException place 1"); //InterruptedException place 1
+
                             }
 
-                            //crucial point has to be modified
-                            while (true) {
-                                System.out.println("Checking team build");
-                                if (playersList.isTeamBuild()) {
-                                    out.println("Team");            //Invokes ClientSideGame
-                                    TypingRaceAlgo game = new TypingRaceAlgo();
-                                    game.run();
-                                }
-                                try {
-                                    Thread.sleep(5000);  //need to change this code
-                                } catch (InterruptedException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
+
 
 
                         }
